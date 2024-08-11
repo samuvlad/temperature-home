@@ -50,6 +50,47 @@ func main() {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"status": "success"})
+		
+	})
+
+
+	r.GET("/getAllRegister", func(c *gin.Context) {
+		rows, err := db.Query("SELECT * FROM registre")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		defer rows.Close()
+
+		var records []struct {			
+			Date        string  `json:"date"`
+			Temperature float64 `json:"temperature"`
+			Humidity    float64 `json:"humidity"`
+			Place       string  `json:"place"`
+		}
+
+		for rows.Next() {
+			var record struct {				
+				Date        string  `json:"date"`
+				Temperature float64 `json:"temperature"`
+				Humidity    float64 `json:"humidity"`
+				Place       string  `json:"place"`
+			}
+
+			if err := rows.Scan(&record.Date, &record.Temperature, &record.Humidity, &record.Place); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+
+			records = append(records, record)
+		}
+
+		if err := rows.Err(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, records)
 	})
 
 	r.Run(":8080") // Ejecutar el servidor en el puerto 8080
